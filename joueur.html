@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mode Joueur</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(to bottom, #f0f4ff, #dce4ff);
+      color: #333;
+      text-align: center;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    h1 {
+      color: #444;
+      font-size: 2rem;
+    }
+
+    p {
+      font-size: 1.2rem;
+      margin: 1rem 0;
+    }
+
+    @media screen and (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      p {
+        font-size: 1rem;
+      }
+    }
+
+    /* Tremblement */
+    .shake {
+      animation: shake 0.3s ease-out;
+    }
+
+    @keyframes shake {
+      0% { transform: translate(0); }
+      25% { transform: translate(-10px, 0); }
+      50% { transform: translate(10px, 0); }
+      75% { transform: translate(-10px, 0); }
+      100% { transform: translate(10px, 0); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Mode Joueur</h1>
+  <p>Déplacez-vous pour trouver le cadeau. Les indices apparaîtront ici :</p>
+  <p id="feedback"></p>
+
+  <script>
+    const feedbackElement = document.getElementById("feedback");
+    const giftLocation = JSON.parse(localStorage.getItem("giftLocation"));
+
+    if (!giftLocation) {
+      feedbackElement.textContent = "Aucun emplacement de cadeau défini. Veuillez demander au créateur de le définir.";
+    } else if (navigator.geolocation) {
+      // Fonction pour obtenir la localisation toutes les secondes
+      setInterval(() => {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const userLatitude = position.coords.latitude;
+          const userLongitude = position.coords.longitude;
+
+          // Calcul de la distance entre l'utilisateur et le cadeau
+          const distance = Math.sqrt(
+            Math.pow(userLatitude - giftLocation.latitude, 2) +
+            Math.pow(userLongitude - giftLocation.longitude, 2)
+          );
+
+          // Convertir la distance en mètres : environ 1° de latitude = 111,32 km
+          const distanceInMeters = distance * 111320;  // Conversion en mètres
+
+          // Zones ajustées pour un petit appartement, avec le jeu qui commence à 10 mètres
+          if (distanceInMeters < 10) { // Zone très chaude (rouge)
+            feedbackElement.textContent = "Tu brûles ! 🎉";
+            document.body.style.backgroundColor = "red";
+          } else if (distanceInMeters < 30) { // Zone chaude (orange)
+            feedbackElement.textContent = "Tu chauffes ! 🔥";
+            document.body.style.backgroundColor = "orange";
+          } else if (distanceInMeters < 50) { // Zone tiède (jaune)
+            feedbackElement.textContent = "Tu es tiède.";
+            document.body.style.backgroundColor = "yellow";
+          } else if (distanceInMeters < 100) { // Zone froide (bleu clair)
+            feedbackElement.textContent = "Tu gèles. ❄️";
+            document.body.style.backgroundColor = "lightblue";
+          } else { // Zone très froide (violet)
+            feedbackElement.textContent = "Tu gèles vraiment. ❄️❄️";
+            document.body.style.backgroundColor = "purple";
+          }
+        }, (error) => {
+          feedbackElement.textContent = "Erreur : Impossible d'obtenir votre position.";
+        });
+      }, 1000); // Requête toutes les secondes
+    } else {
+      feedbackElement.textContent = "La géolocalisation n'est pas supportée sur ce navigateur.";
+    }
+  </script>
+</body>
+</html>

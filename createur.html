@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mode Créateur</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(to bottom, #f0f4ff, #dce4ff);
+      color: #333;
+      text-align: center;
+    }
+
+    h1 {
+      color: #444;
+      font-size: 2rem;
+    }
+
+    p {
+      font-size: 1.2rem;
+      margin: 1rem 0;
+    }
+
+    button {
+      padding: 0.8rem 1.5rem;
+      margin: 1rem;
+      font-size: 1rem;
+      color: white;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+      transform: scale(1.05);
+    }
+
+    button:active {
+      transform: scale(1);
+    }
+
+    @media screen and (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      button {
+        font-size: 0.9rem;
+      }
+      p {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Mode Créateur</h1>
+  <p>Appuyez sur le bouton pour enregistrer l'emplacement du cadeau :</p>
+  <button id="set-location">Définir l'emplacement</button>
+  <p id="status"></p>
+  <script>
+    const setLocationButton = document.getElementById("set-location");
+    const statusElement = document.getElementById("status");
+
+    setLocationButton.addEventListener("click", () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const giftLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          localStorage.setItem("giftLocation", JSON.stringify(giftLocation));
+          statusElement.textContent = "Emplacement enregistré avec succès !";
+        }, (error) => {
+          statusElement.textContent = "Erreur : Impossible d'obtenir votre position.";
+        });
+      } else {
+        statusElement.textContent = "La géolocalisation n'est pas supportée sur ce navigateur.";
+      }
+    });
+  </script>
+</body>
+</html>
