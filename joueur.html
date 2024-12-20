@@ -17,90 +17,119 @@
       background: linear-gradient(to bottom, #f0f4ff, #dce4ff);
       color: #333;
       text-align: center;
-      transition: background-color 0.3s, transform 0.2s;
+      transition: background 0.6s ease, transform 0.2s ease;
     }
 
     h1 {
       color: #444;
-      font-size: 2rem;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
     }
 
     p {
-      font-size: 1.2rem;
-      margin: 1rem 0;
+      font-size: 1.5rem;
+      margin: 0.5rem 0;
+    }
+
+    .feedback {
+      font-weight: bold;
+      font-size: 1.8rem;
+      margin-top: 1rem;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+    }
+
+    .shake {
+      animation: shake 0.3s;
     }
 
     @media screen and (max-width: 600px) {
       h1 {
-        font-size: 1.5rem;
+        font-size: 2rem;
       }
       p {
-        font-size: 1rem;
+        font-size: 1.2rem;
       }
-    }
-
-    /* Tremblement */
-    .shake {
-      animation: shake 0.3s ease-out;
-    }
-
-    @keyframes shake {
-      0% { transform: translate(0); }
-      25% { transform: translate(-10px, 0); }
-      50% { transform: translate(10px, 0); }
-      75% { transform: translate(-10px, 0); }
-      100% { transform: translate(10px, 0); }
+      .feedback {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
   <h1>Mode Joueur</h1>
-  <p>Déplacez-vous pour trouver le cadeau. Les indices apparaîtront ici :</p>
-  <p id="feedback"></p>
+  <p>Déplacez-vous pour trouver le cadeau !</p>
+  <p id="feedback" class="feedback">Prêt à commencer...</p>
 
   <script>
     const feedbackElement = document.getElementById("feedback");
-    const giftLocation = JSON.parse(localStorage.getItem("giftLocation"));
 
-    if (!giftLocation) {
-      feedbackElement.textContent = "Aucun emplacement de cadeau défini. Veuillez demander au créateur de le définir.";
-    } else if (navigator.geolocation) {
-      // Fonction pour obtenir la localisation toutes les secondes
+    // Coordonnées du cadeau
+    const giftLatitude = 48.2827964;
+    const giftLongitude = 4.0585681;
+
+    // Fonction pour calculer la distance en mètres
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Rayon de la Terre en mètres
+      const toRadians = (angle) => angle * (Math.PI / 180);
+      const dLat = toRadians(lat2 - lat1);
+      const dLon = toRadians(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c; // Distance en mètres
+    }
+
+    // Fonction principale
+    if (navigator.geolocation) {
       setInterval(() => {
         navigator.geolocation.getCurrentPosition((position) => {
           const userLatitude = position.coords.latitude;
           const userLongitude = position.coords.longitude;
 
-          // Calcul de la distance entre l'utilisateur et le cadeau
-          const distance = Math.sqrt(
-            Math.pow(userLatitude - giftLocation.latitude, 2) +
-            Math.pow(userLongitude - giftLocation.longitude, 2)
+          // Calcul de la distance
+          const distanceInMeters = calculateDistance(
+            userLatitude,
+            userLongitude,
+            giftLatitude,
+            giftLongitude
           );
 
-          // Convertir la distance en mètres : environ 1° de latitude = 111,32 km
-          const distanceInMeters = distance * 111320;  // Conversion en mètres
-
-          // Zones ajustées pour un petit appartement, avec le jeu qui commence à 10 mètres
-          if (distanceInMeters < 10) { // Zone très chaude (rouge)
-            feedbackElement.textContent = "Tu brûles ! 🎉";
-            document.body.style.backgroundColor = "red";
-          } else if (distanceInMeters < 30) { // Zone chaude (orange)
-            feedbackElement.textContent = "Tu chauffes ! 🔥";
-            document.body.style.backgroundColor = "orange";
-          } else if (distanceInMeters < 50) { // Zone tiède (jaune)
-            feedbackElement.textContent = "Tu es tiède.";
-            document.body.style.backgroundColor = "yellow";
-          } else if (distanceInMeters < 100) { // Zone froide (bleu clair)
-            feedbackElement.textContent = "Tu gèles. ❄️";
-            document.body.style.backgroundColor = "lightblue";
-          } else { // Zone très froide (violet)
-            feedbackElement.textContent = "Tu gèles vraiment. ❄️❄️";
-            document.body.style.backgroundColor = "purple";
+          // Zones de distance (plus proche = plus chaud)
+          if (distanceInMeters < 0.3) { // Très chaud (trouvé)
+            feedbackElement.textContent = "🎉 Tu as trouvé le cadeau ! 🎉";
+            document.body.style.background = "linear-gradient(to bottom, #ff4a4a, #ff0000)";
+          } else if (distanceInMeters < 2) { // Très chaud
+            feedbackElement.textContent = "🔥 Très chaud !";
+            document.body.style.background = "linear-gradient(to bottom, #ff9a4a, #ff4500)";
+          } else if (distanceInMeters < 3) { // Chaud
+            feedbackElement.textContent = "🌟 Chaud !";
+            document.body.style.background = "linear-gradient(to bottom, #ffec85, #ffd700)";
+          } else if (distanceInMeters < 5) { // Tiède
+            feedbackElement.textContent = "🌀 Tiède...";
+            document.body.style.background = "linear-gradient(to bottom, #85d7ff, #00bfff)";
+          } else if (distanceInMeters < 10) { // Froid
+            feedbackElement.textContent = "❄️ Froid.";
+            document.body.style.background = "linear-gradient(to bottom, #b185ff, #6a0dad)";
+          } else { // Très froid
+            feedbackElement.textContent = "❄️❄️ Très froid.";
+            document.body.style.background = "linear-gradient(to bottom, #e0e0ff, #a0a0ff)";
           }
+
+          // Tremblement à chaque changement de catégorie
+          feedbackElement.classList.add("shake");
+          setTimeout(() => feedbackElement.classList.remove("shake"), 300);
         }, (error) => {
           feedbackElement.textContent = "Erreur : Impossible d'obtenir votre position.";
         });
-      }, 1000); // Requête toutes les secondes
+      }, 1000); // Vérification toutes les secondes
     } else {
       feedbackElement.textContent = "La géolocalisation n'est pas supportée sur ce navigateur.";
     }
