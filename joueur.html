@@ -65,9 +65,11 @@
   <h1>Mode Joueur</h1>
   <p>Déplacez-vous pour trouver le cadeau !</p>
   <p id="feedback" class="feedback">Prêt à commencer...</p>
+  <p id="distance" class="feedback"></p> <!-- Ajout de l'affichage de la distance -->
 
   <script>
     const feedbackElement = document.getElementById("feedback");
+    const distanceElement = document.getElementById("distance");
 
     // Coordonnées du cadeau
     const giftLatitude = 48.2827964;
@@ -89,47 +91,61 @@
 
     // Fonction principale
     if (navigator.geolocation) {
-      setInterval(() => {
-        navigator.geolocation.getCurrentPosition((position) => {
-          const userLatitude = position.coords.latitude;
-          const userLongitude = position.coords.longitude;
+      // Fonction de suivi continu de la position de l'utilisateur
+      navigator.geolocation.watchPosition((position) => {
+        const userLatitude = position.coords.latitude;
+        const userLongitude = position.coords.longitude;
 
-          // Calcul de la distance
-          const distanceInMeters = calculateDistance(
-            userLatitude,
-            userLongitude,
-            giftLatitude,
-            giftLongitude
-          );
+        // Calcul de la distance
+        const distanceInMeters = calculateDistance(
+          userLatitude,
+          userLongitude,
+          giftLatitude,
+          giftLongitude
+        );
 
-          // Zones de distance (plus proche = plus chaud)
-          if (distanceInMeters < 0.3) { // Très chaud (trouvé)
-            feedbackElement.textContent = "🎉 Tu as trouvé le cadeau ! 🎉";
-            document.body.style.background = "linear-gradient(to bottom, #ff4a4a, #ff0000)";
-          } else if (distanceInMeters < 2) { // Très chaud
-            feedbackElement.textContent = "🔥 Très chaud !";
-            document.body.style.background = "linear-gradient(to bottom, #ff9a4a, #ff4500)";
-          } else if (distanceInMeters < 3) { // Chaud
-            feedbackElement.textContent = "🌟 Chaud !";
-            document.body.style.background = "linear-gradient(to bottom, #ffec85, #ffd700)";
-          } else if (distanceInMeters < 5) { // Tiède
-            feedbackElement.textContent = "🌀 Tiède...";
-            document.body.style.background = "linear-gradient(to bottom, #85d7ff, #00bfff)";
-          } else if (distanceInMeters < 10) { // Froid
-            feedbackElement.textContent = "❄️ Froid.";
-            document.body.style.background = "linear-gradient(to bottom, #b185ff, #6a0dad)";
-          } else { // Très froid
-            feedbackElement.textContent = "❄️❄️ Très froid.";
-            document.body.style.background = "linear-gradient(to bottom, #e0e0ff, #a0a0ff)";
-          }
+        // Afficher la distance en temps réel
+        distanceElement.textContent = `Distance : ${distanceInMeters.toFixed(2)} mètres`;
 
-          // Tremblement à chaque changement de catégorie
-          feedbackElement.classList.add("shake");
-          setTimeout(() => feedbackElement.classList.remove("shake"), 300);
-        }, (error) => {
+        // Zones de distance (plus proche = plus chaud)
+        if (distanceInMeters < 0.3) { // Très chaud (trouvé)
+          feedbackElement.textContent = "🎉 Tu as trouvé le cadeau ! 🎉";
+          document.body.style.background = "linear-gradient(to bottom, #ff4a4a, #ff0000)";
+        } else if (distanceInMeters < 2) { // Très chaud
+          feedbackElement.textContent = "🔥 Très chaud !";
+          document.body.style.background = "linear-gradient(to bottom, #ff9a4a, #ff4500)";
+        } else if (distanceInMeters < 3) { // Chaud
+          feedbackElement.textContent = "🌟 Chaud !";
+          document.body.style.background = "linear-gradient(to bottom, #ffec85, #ffd700)";
+        } else if (distanceInMeters < 5) { // Tiède
+          feedbackElement.textContent = "🌀 Tiède...";
+          document.body.style.background = "linear-gradient(to bottom, #85d7ff, #00bfff)";
+        } else if (distanceInMeters < 10) { // Froid
+          feedbackElement.textContent = "❄️ Froid.";
+          document.body.style.background = "linear-gradient(to bottom, #b185ff, #6a0dad)";
+        } else { // Très froid
+          feedbackElement.textContent = "❄️❄️ Très froid.";
+          document.body.style.background = "linear-gradient(to bottom, #e0e0ff, #a0a0ff)";
+        }
+
+        // Tremblement à chaque changement de catégorie
+        feedbackElement.classList.add("shake");
+        setTimeout(() => feedbackElement.classList.remove("shake"), 300);
+      }, (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          feedbackElement.textContent = "Erreur : Permission de géolocalisation refusée.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          feedbackElement.textContent = "Erreur : Position indisponible.";
+        } else if (error.code === error.TIMEOUT) {
+          feedbackElement.textContent = "Erreur : Le délai de géolocalisation a expiré.";
+        } else {
           feedbackElement.textContent = "Erreur : Impossible d'obtenir votre position.";
-        });
-      }, 1000); // Vérification toutes les secondes
+        }
+      }, {
+        enableHighAccuracy: true, // Améliore la précision de la géolocalisation
+        timeout: 10000,            // Délai d'attente pour obtenir la position
+        maximumAge: 0              // Ne pas utiliser une position mise en cache
+      });
     } else {
       feedbackElement.textContent = "La géolocalisation n'est pas supportée sur ce navigateur.";
     }
